@@ -1,0 +1,34 @@
+[package]
+name = "litepostman"
+version = "0.1.0"
+description = "Lightweight offline API client"
+authors = ["Eyoel"]
+edition = "2024"
+
+[lib]
+name = "litepostman_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+serde = { version = "1", features = ["derive"] }
+# preserve_order: keep JSON keys in file order when pretty-printing
+# arbitrary_precision: don't round big numbers in responses
+serde_json = { version = "1", features = ["preserve_order", "arbitrary_precision"] }
+reqwest = { version = "0.12", features = ["cookies", "gzip", "brotli", "deflate", "multipart"] }
+tokio = { version = "1", features = ["sync", "macros", "time"] }
+notify = "8"
+dirs = "6"
+# canonicalize() without the Windows "\\?\C:\..." prefix (no-op on Linux)
+dunce = "1"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

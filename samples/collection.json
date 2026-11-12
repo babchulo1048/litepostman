@@ -1,0 +1,544 @@
+{
+  "info": {
+    "_postman_id": "x",
+    "name": "LitePostman Demo",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "console.log('collection pre-request for', pm.info.requestName)"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "exec": [
+          "pm.test('status is not 5xx', () => pm.expect(pm.response.code).to.be.below(500));"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:9999"
+    },
+    {
+      "key": "userId",
+      "value": "2"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "auth": {
+        "type": "noauth"
+      },
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/login"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('login ok', () => pm.response.to.have.status(200));",
+                  "const t = pm.response.json().token;",
+                  "pm.environment.set('token', t);",
+                  "console.log('saved token', t);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Basic auth",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/auth/basic"
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('basic ok', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API key (header)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/auth/apikey"
+            },
+            "auth": {
+              "type": "apikey",
+              "apikey": [
+                {
+                  "key": "key",
+                  "value": "x-api-key"
+                },
+                {
+                  "key": "value",
+                  "value": "{{apiKey}}"
+                },
+                {
+                  "key": "in",
+                  "value": "header"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "API key (query)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/auth/apikey"
+            },
+            "auth": {
+              "type": "apikey",
+              "apikey": [
+                {
+                  "key": "key",
+                  "value": "api_key"
+                },
+                {
+                  "key": "value",
+                  "value": "{{apiKey}}"
+                },
+                {
+                  "key": "in",
+                  "value": "query"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Bearer (inherited)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/auth/bearer"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('bearer accepted', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json()).to.have.property('ok', true);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List users",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/users?page=2",
+              "query": [
+                {
+                  "key": "page",
+                  "value": "2"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('page is 2', () => pm.expect(body.page).to.equal(2));",
+                  "pm.test('has users', () => pm.expect(body.users).to.be.an('array').that.is.not.empty);",
+                  "pm.test('content-type json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('json'));",
+                  "pm.test('this one fails', () => pm.expect(body.users.length).to.eql(3));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get user by id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/users/:id",
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{userId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Nested",
+          "item": [
+            {
+              "name": "Redirect",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/redirect"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('followed to page 9', () => pm.expect(pm.response.json().page).to.equal(9));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Bodies",
+      "auth": {
+        "type": "noauth"
+      },
+      "item": [
+        {
+          "name": "Raw JSON",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/echo?src=raw",
+            "header": [
+              {
+                "key": "X-Trace",
+                "value": "{{$guid}}"
+              },
+              {
+                "key": "X-Disabled",
+                "value": "no",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"hello\": \"world\", \"user\": \"{{username}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-From-Script', value: 'yes' });",
+                  "pm.variables.set('local', 'L1');",
+                  "console.log('url is', pm.request.url.toString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const b = pm.response.json();",
+                  "pm.test('script header arrived', () => pm.expect(b.headers['x-from-script']).to.equal('yes'));",
+                  "pm.test('vars resolved in body', () => pm.expect(JSON.parse(b.body).user).to.equal('eyoel'));",
+                  "pm.test('json content type', () => pm.expect(b.headers['content-type']).to.equal('application/json'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "urlencoded",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/echo",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "a",
+                  "value": "1 2"
+                },
+                {
+                  "key": "b",
+                  "value": "{{username}}"
+                },
+                {
+                  "key": "c",
+                  "value": "off",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('urlencoded body', () => pm.expect(pm.response.json().body).to.equal('a=1%202&b=eyoel'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "form-data",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/echo",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "{{username}}",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "src": "upload.txt",
+                  "type": "file"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('multipart', () => pm.expect(pm.response.json().headers['content-type']).to.include('multipart/form-data'));",
+                  "pm.test(\"file uploaded\", () => {",
+                  "  const body = pm.response.json().body;",
+                  "  pm.expect(body).to.include('filename=\"upload.txt\"');",
+                  "  pm.expect(body).to.include(\"Content-Type: text/plain\");",
+                  "  pm.expect(body).to.include(\"hello from LitePostman upload test\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "XML response",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/xml"
+          }
+        },
+        {
+          "name": "HTML response",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/html"
+          }
+        },
+        {
+          "name": "Big response (3MB)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/big"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Edge cases",
+      "auth": {
+        "type": "noauth"
+      },
+      "item": [
+        {
+          "name": "Slow (5s) — try Cancel",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/slow?ms=5000"
+          }
+        },
+        {
+          "name": "Timeout (40s)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/slow?ms=40000"
+          }
+        },
+        {
+          "name": "Connection refused",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:1/nothing"
+          }
+        },
+        {
+          "name": "Unsupported pm call",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/users"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.sendRequest('http://x', () => {});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Infinite loop script",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/users"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "while (true) {}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Set cookie",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/cookie/set"
+          }
+        },
+        {
+          "name": "Read cookie",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/cookie/get"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('cookie sent back', () => pm.expect(pm.response.json().cookie).to.include('session=abc123'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Collection var set",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/users"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('lastPage', pm.response.json().page);",
+                  "pm.test('reads back', () => pm.expect(pm.collectionVariables.get('lastPage')).to.equal('1'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Plain URL string request",
+          "request": "localhost:4567/users?page=5"
+        }
+      ]
+    }
+  ]
+}

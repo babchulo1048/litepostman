@@ -1,0 +1,10 @@
+{
+  "name": "Local",
+  "values": [
+    { "key": "baseUrl", "value": "http://localhost:4567", "enabled": true },
+    { "key": "username", "value": "eyoel", "enabled": true },
+    { "key": "password", "value": "pass", "enabled": true },
+    { "key": "apiKey", "value": "k-123", "enabled": true },
+    { "key": "unused", "value": "x", "enabled": false }
+  ]
+}
